@@ -28,9 +28,13 @@ preparing a Rally environment to be ready to benchmark or test OpenStack deploym
 #### Playbook variables
 
 `rally_install_dir` - Rally installation directory. Contains the Python virtual environment directories, the Rally and Rally OpenStack plugins cloned from Github sources, as well as the sample Rally scenario task files.
+
 `rally_config_dir` - This directory contains the minimal configuration of the rally.conf file. It is primarily used to specify a location for the sqlite database used by Rally to store target deployments and task result data in a persistent directory.
+
 `rally_database_dir` - The path to the directory that will store the sqlite Rally database
+
 `rally_venv_dir` - The directory of the virtual environment used 
+
 `rally_gh_repos` - The git repository, branch, and destination directory for the cloned repositories.
 
 #### How to install
