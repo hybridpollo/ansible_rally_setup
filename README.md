@@ -45,25 +45,38 @@ To run the playbook:
 
 #### How to use
 
-Upon playbook completion there will be a post deployment message with information relevant to what are
-the next steps to complete the Rally deployment. 
+Upon playbook completion there will be a post deployment message with relevant details for next steps  
+to finalize your Rally deployment. 
 
-While the rest of these post-installation workflow tasks could be easily automated within Ansible, this
+While the rest of these post-installation workflow tasks can be easily automated within Ansible, this
 allows for users new to Rally to become familiar
-on the procedure of creating a target deployment so that you can start running automated test cases against
-your OpenStack cluster. Here are are the rest of the tasks required before you begin running automated test cases.
+with the procedure of setting your first Rally environment running automated test cases against your OpenStack cluster
+in a very short time. 
 
-* Activate the virtual environment that was installed. This will give you access to the rally cli interface
-* Source the `openrc` or OS_ environment files for the OpenStack deployment that will be imported as a target Rally environment for testing.
-* Create the rally database: `rally db create`
-* Create a rally deployment: `rally deployment create --fromenv --name <deployment name>`
-* Test to ensure that Rally succesfully communicate with the OpenStack endpoints to the target test environment: `rally deployment check`
+Here are are the rest of the tasks required before you begin running your first automated test case:
+
+* Activate the python virtual environment where Rally was  installed by the playbook to access the Rally framework and plugins:  This will give you access to the rally cli interface. Example:
+  * `source /opt/rally/rally_benchmark_environment/bin/activate`
+
+* Create the rally database. This procedure is only performed only once: 
+  * `rally db create`
+
+* Source or activate the OpenStack environment file (`openrc`)  containing the authentication details of the target OpenStack cloud that you will be running benchmarks against:
+  * `source /home/stack/overcloudrc`
+
+* Create the first rally deployment using the OpenStack environment credentials source on the previous step: 
+  * `rally deployment create --fromenv --name <deployment name>`
+
+* Verify to ensure that Rally can successfully connect with the OpenStack endpoints of the target environment: 
+  * `rally deployment check`
 
 
-At this point Rally is installed, your target OpenStack environment that will be used for benchmark or validation testing is ready.
-The next step is to configure and run the desired tasks. 
+At this point Rally is installed, your target OpenStack environment that will be used for benchmark or validation testing is ready. The next step is to configure and run the desired tasks. 
 
 An example set of tasks have been provided in a file located in `{{ rally_config_dir }}/rally_configured_scenarios/rally-openstack-cloud-validation-task-example.yaml` - You can use that reference to explore the capabilities of the OpenStack plugins for Rally. 
 
 The complete set of community provided sample scenarios can be found in `{{ rally_install_dir }}/rally_available_scenarios`
+
+
+The [Rally community documentation contains a quickstart guide](https://rally.readthedocs.io/en/latest/quick_start/tutorial/step_1_setting_up_env_and_running_benchmark_from_samples.html#running-rally-tasks) for getting started in running Rally tasks and its an excellent source of information as you explore the capabilities of this rather flexible and yet under utilized Opensource Utility.
 
