@@ -1,0 +1,6 @@
+# Ansible Managed
+[DEFAULT]
+
+[database]
+sqlite_synchronous = true
+connection=sqlite:///{{ rally_database_dir }}/rally.sqlite

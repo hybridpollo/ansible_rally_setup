@@ -1,0 +1,5 @@
+---
+rally_host:
+  hosts:
+    localhost:
+      ansible_connection: local

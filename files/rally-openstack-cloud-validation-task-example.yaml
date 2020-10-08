@@ -1,0 +1,238 @@
+# Purpose: 
+# Example Rally task file to support
+# the validation of functionality of an OpenStack
+# Cloud within the confines of the most popular
+# components such as keystone, glance, nova, neutron, 
+# and cinder.
+#
+# Validating the task file: rally task validate <task file>
+# Executing the taask file:  rally task start <task file>
+#
+
+
+# Configurable task parameters
+# 
+# The flavor to use for Nova boot tests
+{% set flavor_name = flavor_name or "g.tiny" %}
+# The flaavor to use during Nova instance resize tests
+{% set flavor_name_resized = flavor_name_resized or "g.medium" %}
+{% set glance_image = glance_image or "centos-8" %}
+
+# Neutron network ID for addresses assignment during tests
+{% set network_id = network_id  or "8b292414-765c-4dad-95d6-e1afa434b1c2" %}
+#
+
+---
+  # Keystone test
+  # Create projects with users
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # SLA will not pass unless 100% success rate
+  KeystoneBasic.create_tenant_with_users:
+    -
+      args:
+        users_per_tenant: 5
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 2
+      sla:
+        failure_rate:
+          max: 0
+
+  # Keystone test
+  # Create user, update password
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # SLA will not pass unless 100% success rate
+  KeystoneBasic.create_user_update_password:
+    -
+      args: {}
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 2
+      sla:
+        failure_rate:
+          max: 0
+
+  # Keystone test
+  # add and remove role from user
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # creates 5 x tenants with 2 x users per tenant
+  # SLA will not pass unless 100% success rate
+  KeystoneBasic.add_and_remove_user_role:
+    -
+      args: {}
+      runner:
+        type: "constant"
+        times:  20
+        concurrency: 2
+      context:
+        users:
+          tenants: 5
+          users_per_tenant: 2
+      sla:
+        failure_rate:
+          max: 0
+
+  # Nova tests
+  # create flavors and set flavor properties
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # creates 2 x tenants with 2 x users per tenant
+  # SLA will not pass unless 100% success rate
+  NovaFlavors.create_flavor_and_set_keys:
+    -
+      args:
+        ram: 8192
+        vcpus : 8
+        disk: 40
+        extra_specs: {}
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        failure_rate:
+          max: 0
+    -
+      args:
+        ram: 8192
+        vcpus : 8
+        disk: 40
+        extra_specs:
+          hw:cpu_policy: "dedicated"
+          hw:mem_page_size: "1GB"
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+      sla:
+        failure_rate:
+          max: 0
+
+  # Nova tests
+  # boots and list server operations
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # creates 2 x tenants with 2 x users per tenant
+  # disable quotas during test context configuration
+  # for the duration of the test
+  # SLA will not pass unless 100% success rate
+  NovaServers.boot_and_list_server:
+    -
+      args:
+        flavor:
+            name: "{{ flavor_name }}"
+        image:
+            name: "{{ glance_image }}"
+        nics:
+          - net-id: "{{ network_id }}"
+        detailed: True
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+        quotas:
+          nova:
+            cores: -1
+            ram: -1
+            instances: -1
+      sla:
+        failure_rate:
+          max: 0
+
+  # Nova tests
+  # boots and list server operations
+  # Performed 20 x with a concurrency of 2 operations
+  # per iteration
+  # creates 2 x tenants with 2 x users per tenant
+  # disable quotas during test context configuration
+  # for the duration of the test
+  # SLA will not pass unless 100% success rate
+  NovaServers.resize_server:
+    -
+      args:
+        flavor:
+            name: "{{ flavor_name }}"
+        image:
+            name: "{{ glance_image }}"
+        to_flavor:
+            name: "{{ flavor_name_resized }}"
+        nics:
+          - net-id: "{{ network_id }}"
+        confirm: true
+        force_delete: false
+      runner:
+        type: "constant"
+        times: 20
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+        quotas:
+          nova:
+            cores: -1
+            ram: -1
+            instances: -1
+      sla:
+        failure_rate:
+          max: 0
+
+
+  # Nova tests
+  # boot server, attach volume, and live migrate the instance
+  # with volume attached
+  # Performed 10 x with a concurrency of 2 operations
+  # per iteration
+  # creates 2 x tenants with 2 x users per tenant
+  # disable quotas for nova and cinder during test context configuration
+  # for the duration of the test
+  # SLA will not pass unless 100% success rate
+  NovaServers.boot_server_attach_created_volume_and_live_migrate:
+    - 
+      args:
+        flavor:
+          name: "{{ flavor_name }}"
+        image:
+          name: "{{ glance_image }}"
+        size: 50
+        block_migration: true
+        boot_server_kwargs:
+          nics:
+            - net-id: "{{ network_id }}"
+        create_volume_kwargs: {}
+      runner:
+        type: "constant"
+        times: 10
+        concurrency: 2
+      context:
+        users:
+          tenants: 2
+          users_per_tenant: 2
+        quotas:
+          nova:
+            cores: -1
+            ram: -1
+            instances: -1
+          cinder:
+            volumes: -1
+            gigabytes: -1
+      sla:
+        failure_rate:
+          max: 0
