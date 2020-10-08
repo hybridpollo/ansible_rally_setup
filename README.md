@@ -1,4 +1,4 @@
-### Ansible Driven Rally Deployment for OpenStack Cloud Validation
+### Ansible Driven Rally Benchmark Framework Deployment for OpenStack
 
 #### About
 This repository contains an Ansible playbook used to configure and install
