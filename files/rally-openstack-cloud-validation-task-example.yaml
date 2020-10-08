@@ -12,6 +12,11 @@
 
 # Configurable task parameters
 # 
+# NOTE: All of these resources must exist in the 
+# OpenStack environment. If the flavors, glance images, or 
+# networks are not found, the rally task validation or execution
+# will be aborted until fixed.
+#
 # The flavor to use for Nova boot tests
 {% set flavor_name = flavor_name or "g.tiny" %}
 # The flaavor to use during Nova instance resize tests
