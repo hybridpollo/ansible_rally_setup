@@ -9,9 +9,13 @@ The motivation for this small project is to have a quickly reusable, isolated,
 and up-to-date installation for Rally including all of the required components
 to support the benchmarking or functionality testing of an OpenStack Cloud. 
 
-This repository also contains a collection of Rally tasks in a single task file
-that aims to be a close-to-complete functional validation of the most popular
+This repository also contains a collection of Rally tasks in an example task file
+that tryes to be a close-to-complete basic functional validation of the most popular
 components found in an OpenStack cloud: Keystone, Glance, Nova, Neutron, and Cinder.
+
+A complete list of supported OpenStack scenarios are available in the [Rally
+OpenStack Plugin Repository.](https://github.com/openstack/rally-openstack/tree/master/samples)
+These sample scenarios are also included as part of this installation in an easy to find location.
 
 Another motivation behind this was to use as a building block on how to set up Rally
 once it has been deployed with the goal of understanding the overall workflow of
