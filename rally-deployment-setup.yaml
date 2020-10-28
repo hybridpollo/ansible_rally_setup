@@ -24,14 +24,14 @@
 
   tasks:
     - name: Installing rpm packages to support Rally installation
-      yum:
+      dnf:
         name: '{{ item }}'
         state: installed
       loop: '{{ rally_rpm_deps }}'
       tags:
         - rpm_packages
 
-    - name: Creating key directories for the Rally installation
+    - name: Creating directories for the Rally installation
       file:
         path: '{{ item }}'
         state: directory
