@@ -6,7 +6,7 @@
 # and cinder.
 #
 # Validating the task file: rally task validate <task file>
-# Executing the taask file:  rally task start <task file>
+# Executing the task file:  rally task start <task file>
 #
 
 
@@ -27,6 +27,7 @@
 {% set network_id = network_id  or "8b292414-765c-4dad-95d6-e1afa434b1c2" %}
 #
 
+
 ---
   # Keystone test
   # Create projects with users
@@ -44,6 +45,7 @@
       sla:
         failure_rate:
           max: 0
+
 
   # Keystone test
   # Create user, update password
@@ -82,7 +84,6 @@
         failure_rate:
           max: 0
 
-  # Nova tests
   # create flavors and set flavor properties
   # Performed 20 x with a concurrency of 2 operations
   # per iteration
@@ -126,7 +127,6 @@
         failure_rate:
           max: 0
 
-  # Nova tests
   # boots and list server operations
   # Performed 20 x with a concurrency of 2 operations
   # per iteration
@@ -161,8 +161,7 @@
         failure_rate:
           max: 0
 
-  # Nova tests
-  # boots and list server operations
+  # boots and resize server operations
   # Performed 20 x with a concurrency of 2 operations
   # per iteration
   # creates 2 x tenants with 2 x users per tenant
@@ -199,8 +198,6 @@
         failure_rate:
           max: 0
 
-
-  # Nova tests
   # boot server, attach volume, and live migrate the instance
   # with volume attached
   # Performed 10 x with a concurrency of 2 operations
