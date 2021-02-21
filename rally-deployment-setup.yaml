@@ -55,8 +55,8 @@
         mode: 0755
       loop:
         - '{{ rally_source_base_dir }}'
-        - '{{ rally_source_base_dir }}/sample_scenarios'
-        - '{{ rally_source_base_dir }}/configured_scenarios'
+        - '{{ rally_install_dir }}/sample_scenarios'
+        - '{{ rally_install_dir }}/configured_scenarios'
         - '{{ rally_config_dir }}'
         - '{{ rally_database_dir }}'
       tags:
@@ -87,7 +87,7 @@
     - name: 'Extract Rally OpenStack scenario samples to {{ rally_install_dir }}/sample_scenarios'
       synchronize:
         src: '{{ rally_source_base_dir }}/rally-openstack-plugins/samples/tasks/scenarios/' 
-        dest: '{{ rally_install_dir }}/sample_scenarios'
+        dest: '{{ rally_install_dir }}/sample_scenarios/'
       tags:
         - rally_copy_sample_scenarios
         - install_rally
@@ -95,7 +95,7 @@
     - name: 'Get OpenStack cloud validation example in {{ rally_install_dir }}/configured_scenarios'
       copy:
         src: files/rally-openstack-cloud-validation-task-example.yaml
-        dest: '{{ rally_install_dir }}/configured_scenarios'
+        dest: '{{ rally_install_dir }}/configured_scenarios/openstack-cloud-validation-tests.yaml'
       tags:
         - rally_copy_sample_scenarios
         - install_rally
