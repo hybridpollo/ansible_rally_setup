@@ -7,31 +7,46 @@
 - name: Rally + OpenStack Benchmarking Environment Installation
   hosts: rally_host
   vars:
-    - rally_rpm_deps:
+    ansible_user_dir: /home/arlaporte
+    rally_rpm_deps:
       - python3-virtualenv
       - git
-    - rally_install_dir: /opt/rally
-    - rally_config_dir: /etc/rally
-    - rally_database_dir: /var/rally/db
-    - rally_venv_dir: '{{ rally_install_dir }}/rally_benchmark_environment'
-    - rally_gh_repos:
-      - gh_repo_url: https://github.com/openstack/rally.git
-        gh_repo_branch: master
-        gh_repo_dest_dir: '{{ rally_install_dir }}/rally_source_software/rally' 
-      - gh_repo_url: https://github.com/openstack/rally-openstack.git
-        gh_repo_branch: master
-        gh_repo_dest_dir: '{{ rally_install_dir }}/rally_source_software/rally-openstack' 
+    rally_install_dir: '{{ ansible_user_dir }}/rally-testing'
+    rally_config_dir: '{{ ansible_user_dir }}/.rally'
+    rally_source_base_dir: '{{ rally_install_dir }}/rally_source_software'
+    rally_database_dir: '{{ ansible_user_dir }}/.rally/db'
+    rally_venv_dir: '{{ ansible_user_dir }}/.rally/rally-environment'
+    rally_git_repos:
+      - repo_url: https://github.com/openstack/rally.git
+        repo_branch: master
+        repo_dest_dir: '{{ rally_source_base_dir }}/rally-base' 
+      - repo_url: https://github.com/openstack/rally-openstack.git
+        repo_branch: master
+        repo_dest_dir: '{{ rally_source_base_dir }}/rally-openstack-plugins' 
 
   tasks:
-    - name: Installing rpm packages to support Rally installation
+    - name: Ensure compatible OS and Ansible versions 
+      assert:  
+        that: 
+          - ansible_os_family == 'RedHat'
+          - ansible_distribution_major_version >= '8'
+          - ansible_version.full >= '2.9'
+        fail_msg: 'OS distribution or Ansible version not supported.'
+        quiet: true
+      tags:
+        - install_rally
+
+    - name: Installing rpm packages supporting installation
+      become: true
       dnf:
         name: '{{ item }}'
         state: installed
       loop: '{{ rally_rpm_deps }}'
       tags:
         - rpm_packages
+        - install_rally
 
-    - name: Creating directories for the Rally installation
+    - name: Creating installation directories
       file:
         path: '{{ item }}'
         state: directory
@@ -39,48 +54,53 @@
         group: '{{ ansible_user }}'
         mode: 0755
       loop:
-        - '{{ rally_install_dir }}/rally_source_software'
-        - '{{ rally_install_dir }}/rally_sample_scenarios'
-        - '{{ rally_install_dir }}/rally_configured_scenarios'
+        - '{{ rally_source_base_dir }}'
+        - '{{ rally_source_base_dir }}/sample_scenarios'
+        - '{{ rally_source_base_dir }}/configured_scenarios'
         - '{{ rally_config_dir }}'
         - '{{ rally_database_dir }}'
       tags:
         - configure_directories
+        - install_rally
 
     - name: Clone git repositories for Rally and Rally OpenStack Plugins
       git:
-        repo: '{{ item.gh_repo_url }}'
-        version: '{{ item.gh_repo_branch }}'
-        dest: '{{ item.gh_repo_dest_dir }}'
+        repo: '{{ item.repo_url }}'
+        version: '{{ item.repo_branch }}'
+        dest: '{{ item.repo_dest_dir }}'
         clone: yes
         accept_hostkey: yes
-      loop: '{{ rally_gh_repos }}'
+      loop: '{{ rally_git_repos }}'
       tags:
         - clone_repos
+        - install_rally
 
-    - name: Installing Rally and Rally OpenStack Plugins in Virtual Environment
+    - name: Installing Rally and Openstack plugins in virtual environment
       pip:
-        name: 'file:///{{ item.gh_repo_dest_dir }}'
+        name: 'file:///{{ item.repo_dest_dir }}'
         virtualenv: '{{ rally_venv_dir }}'
-      loop: '{{ rally_gh_repos }}'
+      loop: '{{ rally_git_repos }}'
       tags:
         - rally_pip_install
+        - install_rally
 
-    - name: "Copy the Rally OpenStack scenario samples to {{ rally_install_dir }}/rally_available_scenarios"
+    - name: 'Extract Rally OpenStack scenario samples to {{ rally_install_dir }}/sample_scenarios'
       synchronize:
-        src: '{{ rally_install_dir }}/rally_source_software/rally-openstack/samples/tasks/scenarios/' 
-        dest: '{{ rally_install_dir }}/rally_available_scenarios'
+        src: '{{ rally_source_base_dir }}/rally-openstack-plugins/samples/tasks/scenarios/' 
+        dest: '{{ rally_install_dir }}/sample_scenarios'
       tags:
         - rally_copy_sample_scenarios
+        - install_rally
 
-    - name: "Copy a near-ready for use OpenStack cloud validation example in {{ rally_install_dir }}/rally_configured_scenarios"
+    - name: 'Get OpenStack cloud validation example in {{ rally_install_dir }}/configured_scenarios'
       copy:
         src: files/rally-openstack-cloud-validation-task-example.yaml
-        dest: '{{ rally_install_dir }}/rally_configured_scenarios'
+        dest: '{{ rally_install_dir }}/configured_scenarios'
       tags:
         - rally_copy_sample_scenarios
+        - install_rally
 
-    - name: "Generate rally configuration file to {{ rally_config_dir }}/rally.conf"
+    - name: 'Generate rally configuration file to {{ rally_config_dir }}/rally.conf'
       template:
         src: files/rally.conf.j2
         dest: '{{ rally_config_dir }}/rally.conf'
@@ -89,26 +109,43 @@
         mode: 0640
       tags:
         - rally_generate_config
+        - install_rally
+
+    - name: 'Create the rally database in {{ rally_database_dir}}'
+      command: '{{ rally_venv_dir }}/bin/rally db create'
+      tags:
+        - rally_db_create
+        - install_rally
+
+    - name: Purging the rally installation 
+      file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - '{{ rally_install_dir }}'
+        - '{{ rally_config_dir }}'
+      when: '"delete_rally" in ansible_run_tags'
+      tags:
+        - delete_rally
 
     - name: Installation Complete
       debug:
         msg:
-          - "#########################################################################################################################"
+          - "##############################################################################################"
           - "Rally has been successfully installed."
           - "To use activate the environment in {{ rally_venv_dir }}"
           - "Example: source {{ rally_venv_dir }}/bin/activate"
-          - "Community provided sample scenario tasks located in: {{ rally_install_dir }}/rally_available_scenarios"
-          - "A ready to use OpenStack Cloud validation task list located in: {{ rally_install_dir }}/rally_configured_scenarios"
-          - "#########################################################################################################################"
-          - "#########################################################################################################################"
+          - "Community provided sample scenario tasks located in: {{ rally_install_dir }}/sample_scenarios"
+          - "A ready to use OpenStack Cloud validation task list located in: {{ rally_install_dir }}/configured_scenarios"
+          - "##############################################################################################"
           - "Next Steps:" 
-          - "Execute  <rally db create> inside the virtual environment to create the rally initial rally database"
-          - "Source or activate your OS_ environment variables from the OpenStack rc file"
-          - "Execute <rally deployment create --fromenv --name (string)>"
-          - "This will create and activate the target OpenStack environment to run benchmarks against."
-          - "Refer to the community docs on additional information for running benchmarks."
+          - "Source the Openstack OS_* environment variables from the rc file"
+          - "Run command: (rally deployment create --fromenv --name DEPLOYMENT_NAME)"
+          - "This will create and activate the target OpenStack environment to run rally tasks."
+          - "Refer to the community docs on additional information for running benchmarks:"
           - "https://rally.readthedocs.io/en/latest/quick_start/tutorial/step_1_setting_up_env_and_running_benchmark_from_samples.html"
-          - "#########################################################################################################################"
+          - "##############################################################################################"
       tags:
-        - print_install_message
+        - install_message
+        - install_rally
     
