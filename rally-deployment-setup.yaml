@@ -7,7 +7,7 @@
 - name: Rally + OpenStack Benchmarking Environment Installation
   hosts: rally_host
   vars:
-    ansible_user_dir: /home/arlaporte
+    ansible_user_dir: /home/berto
     rally_rpm_deps:
       - python3-virtualenv
       - git
